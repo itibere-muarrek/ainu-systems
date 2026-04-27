@@ -2,28 +2,28 @@
 AINU.SYSTEMS — Sistema Principal Completo
 Agente automático + Equações v8 + 27 países dinâmico
 LOGIN ADMIN/VISITOR
-
+ 
 Autor: ITIBERÊ MUARREK
-Versão: 2.0 (Abril 2026)
+Versão: 2.1 (Abril 2026)
 """
-
+ 
 import streamlit as st
 import pandas as pd
 import json
 from datetime import datetime
 from config import CREDENCIAIS
-
+ 
 st.set_page_config(page_title="AINU.Systems", layout="wide")
-
+ 
 # ============================================================================
 # LOGIN
 # ============================================================================
-
+ 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.user_type = None
     st.session_state.username = None
-
+ 
 def login_page():
     st.title("🔐 AINU.Systems")
     st.subheader("Sistema de Índices Narayama")
@@ -52,17 +52,53 @@ def login_page():
         st.markdown("""
         **Para credenciais, consulte o administrador do sistema.**
         """)
-
+ 
 def logout():
     st.session_state.logged_in = False
     st.session_state.user_type = None
     st.session_state.username = None
     st.rerun()
-
+ 
+# ============================================================================
+# FUNÇÃO: Exportar JSON para Narayama.live
+# ============================================================================
+ 
+def exportar_json(df):
+    """Exporta dados em formato JSON para Narayama.live"""
+    def status_geracional(n_index):
+        if n_index > 1.8:
+            return "🟢 Superávit Geracional"
+        elif n_index >= 1.0:
+            return "🟡 Equilibrada"
+        else:
+            return "🔴 Déficit Geracional"
+    
+    dados_export = {
+        "timestamp": datetime.now().isoformat(),
+        "total_paises": len(df),
+        "paises": []
+    }
+    
+    for _, row in df.iterrows():
+        dados_export["paises"].append({
+            "pais": row["País"],
+            "regiao": row["Região"],
+            "n_index": float(row["N_Index"]),
+            "status": status_geracional(row["N_Index"]),
+            "pop_0_25": float(row["Pop_0_25_pct"]),
+            "pop_65plus": float(row["Pop_65plus_pct"]),
+            "coorte_a": int(row["Coorte_A_pct"]),
+            "coorte_b": int(row["Coorte_B_pct"]),
+            "coorte_c": int(row["Coorte_C_pct"])
+        })
+    
+    with open("exports.json", "w", encoding="utf-8") as f:
+        json.dump(dados_export, f, ensure_ascii=False, indent=2)
+ 
 # ============================================================================
 # CARREGAR DADOS
 # ============================================================================
-
+ 
 def carregar_dados():
     try:
         df = pd.read_csv("base_dados_paises.csv")
@@ -70,7 +106,7 @@ def carregar_dados():
     except:
         st.error("❌ Erro ao carregar base_dados_paises.csv")
         return None
-
+ 
 def status_geracional(n_index):
     if n_index > 1.8:
         return "🟢 Superávit Geracional"
@@ -78,11 +114,11 @@ def status_geracional(n_index):
         return "🟡 Equilibrada"
     else:
         return "🔴 Déficit Geracional"
-
+ 
 # ============================================================================
 # SISTEMA PRINCIPAL (após login)
 # ============================================================================
-
+ 
 if not st.session_state.logged_in:
     login_page()
 else:
@@ -283,31 +319,3 @@ else:
             
             Para editar ou gerenciar, faça login como ADMIN.
             """)
-
-# ============================================================================
-# FUNÇÃO: Exportar JSON para Narayama.live
-# ============================================================================
-
-def exportar_json(df):
-    """Exporta dados em formato JSON para Narayama.live"""
-    dados_export = {
-        "timestamp": datetime.now().isoformat(),
-        "total_paises": len(df),
-        "paises": []
-    }
-    
-    for _, row in df.iterrows():
-        dados_export["paises"].append({
-            "pais": row["País"],
-            "regiao": row["Região"],
-            "n_index": float(row["N_Index"]),
-            "status": status_geracional(row["N_Index"]),
-            "pop_0_25": float(row["Pop_0_25_pct"]),
-            "pop_65plus": float(row["Pop_65plus_pct"]),
-            "coorte_a": int(row["Coorte_A_pct"]),
-            "coorte_b": int(row["Coorte_B_pct"]),
-            "coorte_c": int(row["Coorte_C_pct"])
-        })
-    
-    with open("exports.json", "w", encoding="utf-8") as f:
-        json.dump(dados_export, f, ensure_ascii=False, indent=2)
